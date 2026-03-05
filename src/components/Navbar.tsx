@@ -3,9 +3,11 @@ import { type FC } from 'react';
 interface NavbarProps {
   cartCount: number;
   onCartClick: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-export const Navbar: FC<NavbarProps> = ({ cartCount, onCartClick }) => {
+export const Navbar: FC<NavbarProps> = ({ cartCount, onCartClick, searchQuery, onSearchChange }) => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-primary/95 backdrop-blur-sm text-white shadow-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,9 +30,25 @@ export const Navbar: FC<NavbarProps> = ({ cartCount, onCartClick }) => {
               <input
                 type="text"
                 placeholder="Buscar produtos..."
+                value={searchQuery || ''}
+                onChange={(e) => {
+                  onSearchChange?.(e.target.value);
+                  if (e.target.value) {
+                    const el = document.getElementById('produtos');
+                    if (el) {
+                      const rect = el.getBoundingClientRect();
+                      if (rect.top > window.innerHeight || rect.bottom < 0) {
+                         el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }
+                }}
                 className="w-full bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-full py-2.5 pl-5 pr-12 focus:outline-none focus:bg-white/20 focus:border-white/40 transition-all font-light"
               />
-              <button className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 bg-white text-brand-primary rounded-full hover:scale-105 transition-transform">
+              <button 
+                onClick={() => document.getElementById('produtos')?.scrollIntoView({ behavior: 'smooth' })}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 bg-white text-brand-primary rounded-full hover:scale-105 transition-transform"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>

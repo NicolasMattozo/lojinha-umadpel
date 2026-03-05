@@ -14,6 +14,7 @@ function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // URL do novo Google Apps Script (products-script.js) ou do principal
@@ -78,12 +79,14 @@ function App() {
       <Navbar 
         cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} 
         onCartClick={() => setIsCheckoutOpen(true)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <main className="flex-1 w-full">
         <Hero />
         
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <section id="produtos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
               Nossos Produtos
@@ -111,7 +114,9 @@ function App() {
                 </div>
               ))
             ) : products.length > 0 ? (
-              products.map(product => (
+              products
+                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(product => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
@@ -120,6 +125,10 @@ function App() {
               ))
             ) : (
               <p className="col-span-full text-center text-gray-500 py-10">Nenhum produto encontrado na planilha.</p>
+            )}
+            
+            {!isLoadingProducts && products.length > 0 && products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              <p className="col-span-full text-center text-gray-500 py-10 w-full">Nenhum produto encontrado na sua busca.</p>
             )}
           </div>
         </section>
