@@ -2,7 +2,7 @@ import { type FC } from 'react';
 
 export const Hero: FC = () => {
   return (
-    <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
+    <div className="relative pt-40 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       {/* Background with Gradient */}
       <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-linear-to-br from-brand-primary via-brand-secondary to-black opacity-95"></div>

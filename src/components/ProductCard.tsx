@@ -22,7 +22,7 @@ export function ProductCard({ product, onOpenModal }: ProductCardProps) {
             <div className="p-5 flex flex-col flex-1">
                 <div className="mb-2">
                      <span className="text-xs font-bold text-brand-primary uppercase tracking-wider">
-                        Oferta
+                        {product.span}
                      </span>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight group-hover:text-brand-primary transition-colors">
