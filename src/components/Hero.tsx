@@ -5,7 +5,7 @@ export const Hero: FC = () => {
     <div className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       {/* Background with Gradient */}
       <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-primary via-brand-secondary to-black opacity-95"></div>
+          <div className="absolute inset-0 bg-linear-to-br from-brand-primary via-brand-secondary to-black opacity-95"></div>
           {/* Abstract pattern or overlay can go here */}
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
       </div>
@@ -16,7 +16,7 @@ export const Hero: FC = () => {
         </span>
         
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 leading-tight drop-shadow-lg">
-          Vista a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">Identidade</span> <br />
+          Vista a <span className="text-transparent bg-clip-text bg-linear-to-r from-white to-gray-300">Identidade</span> <br />
           da Nossa Geração
         </h1>
         

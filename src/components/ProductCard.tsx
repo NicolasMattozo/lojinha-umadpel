@@ -10,7 +10,7 @@ export function ProductCard({ product, onOpenModal }: ProductCardProps) {
 
     return (
         <div className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full border border-gray-100 overflow-hidden">
-            <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+            <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
                 <img 
                     src={product.image} 
                     alt={product.name} 
