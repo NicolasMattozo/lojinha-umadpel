@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import type { CartItem } from '../types';
 import emailjs from '@emailjs/browser';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { QRCodeSVG } from 'qrcode.react';
+import { generatePixPayload } from '../utils/pix';
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -13,12 +15,19 @@ interface CheckoutModalProps {
 export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: CheckoutModalProps) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'pix' | 'later' | ''>('');
+    const [whatsapp, setWhatsapp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     if (!isOpen) return null;
 
     const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    const PIX_KEY = 'vithoria.music@gmail.com'; // Substitua pela sua chave PIX
+    const PIX_NAME = 'Lojinha Umadpel';
+    const PIX_CITY = 'Pelotas';
+    const pixPayload = total > 0 ? generatePixPayload(PIX_KEY, PIX_NAME, PIX_CITY, total, 'PEDIDO') : '';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,12 +45,14 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
         ).join('\n');
 
         const totalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+        const paymentStatusStr = paymentMethod === 'pix' ? 'Pagamento: Pix Agora' : `Pagamento: Depois. WhatsApp: ${whatsapp}`;
 
         const templateParams = {
             nome: name,
             email: email,
             itens: itemsList,
-            total: totalFormatted
+            total: totalFormatted,
+            pagamento: paymentStatusStr
         };
 
         try {
@@ -65,6 +76,8 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                 body: JSON.stringify({
                     customerName: name,
                     customerEmail: email,
+                    whatsapp: whatsapp,
+                    paymentMethod: paymentMethod === 'pix' ? 'Pix Agora' : 'Pagar Depois',
                     total: totalFormatted,
                     items: cartItems.map(item => ({
                         name: item.name,
@@ -78,6 +91,8 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
             alert(`Obrigado, ${name}! Seu pedido foi registrado com sucesso e você receberá um e-mail de confirmação em breve.`);
             setName('');
             setEmail('');
+            setWhatsapp('');
+            setPaymentMethod('');
             onConfirm({ name, email });
         } catch (error) {
             console.error('Erro ao enviar pedido:', error);
@@ -90,7 +105,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-fade-in-up relative">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden transform transition-all animate-fade-in-up relative">
                 <button 
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors z-10"
@@ -100,12 +115,12 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                     </svg>
                 </button>
                 
-                <div className="bg-brand-gray px-6 py-6 border-b border-gray-100">
+                <div className="bg-brand-gray px-6 py-5 border-b border-gray-100 shrink-0">
                     <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Finalizar Pedido</h2>
                     <p className="text-sm text-gray-500 mt-1">Complete seus dados para confirmar.</p>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200">
                     <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-500">Resumo</span>
@@ -157,6 +172,77 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                                     placeholder="seu@email.com"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Seu WhatsApp (com DDD)</label>
+                                <input 
+                                    type="tel" 
+                                    required 
+                                    className="w-full px-4 py-3 bg-gray-50 border-gray-200 border rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all placeholder-gray-400 text-gray-800"
+                                    value={whatsapp}
+                                    onChange={(e) => setWhatsapp(e.target.value)}
+                                    placeholder="(xx) xxxxx-xxxx"
+                                />
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3 ml-1">Forma de Pagamento</label>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <label className={`cursor-pointer rounded-xl border p-3 flex items-center transition-all ${paymentMethod === 'pix' ? 'bg-brand-primary/5 border-brand-primary ring-1 ring-brand-primary' : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-brand-primary/30'}`}>
+                                        <input 
+                                            type="radio" 
+                                            name="payment" 
+                                            value="pix"
+                                            className="sr-only"
+                                            checked={paymentMethod === 'pix'}
+                                            onChange={(e) => setPaymentMethod(e.target.value as any)}
+                                        />
+                                        <div className="flex-1">
+                                            <span className={`block text-sm font-semibold ${paymentMethod === 'pix' ? 'text-brand-primary' : 'text-gray-700'}`}>Pagar no Pix agora</span>
+                                        </div>
+                                    </label>
+                                    
+                                    <label className={`cursor-pointer rounded-xl border p-3 flex items-center transition-all ${paymentMethod === 'later' ? 'bg-brand-primary/5 border-brand-primary ring-1 ring-brand-primary' : 'bg-gray-50 border-gray-200 hover:bg-white hover:border-brand-primary/30'}`}>
+                                        <input 
+                                            type="radio" 
+                                            name="payment" 
+                                            value="later"
+                                            className="sr-only"
+                                            checked={paymentMethod === 'later'}
+                                            onChange={(e) => setPaymentMethod(e.target.value as any)}
+                                        />
+                                        <div className="flex-1">
+                                            <span className={`block text-sm font-semibold ${paymentMethod === 'later' ? 'text-brand-primary' : 'text-gray-700'}`}>Pagar depois</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {paymentMethod === 'pix' && (
+                                <div className="mt-4 flex flex-col items-center bg-gray-50 p-4 rounded-xl border border-gray-100 animate-fade-in-up">
+                                    <p className="text-sm font-semibold text-gray-700 mb-3 block w-full text-center">Escaneie o QR Code para pagar ({new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)})</p>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                                        <QRCodeSVG value={pixPayload} size={160} />
+                                    </div>
+                                    <p className="text-xs text-gray-500 text-center mt-3 max-w-[250px]">
+                                        Abra o app do seu banco, escolha <strong>Pix por QR Code</strong> e aponte a câmera.
+                                    </p>
+                                    
+                                    <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-700 bg-green-50 px-4 py-2 rounded-lg border border-green-100 w-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#25D366" className="shrink-0">
+                                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 1.829 6.366L0 24l5.807-1.52A12.052 12.052 0 0 0 11.944 24c6.627 0 12-5.373 12-12s-5.373-12-12-12zM12 21.905a9.96 9.96 0 0 1-5.088-1.391l-3.64.954.97-3.541A9.954 9.954 0 0 1 2.056 12C2.056 6.516 6.516 2.056 12 2.056s9.944 4.46 9.944 9.944S17.484 21.905 12 21.905zm5.558-7.584c-.305-.152-1.801-.89-2.079-.99-.279-.102-.482-.152-.686.152-.203.305-.788.99-1.016 1.218-.178.203-.382.254-.686.102-.305-.152-1.286-.474-2.45-1.517-.905-.812-1.515-1.815-1.693-2.12-.178-.305-.019-.47.133-.62.137-.136.305-.355.457-.533.152-.178.203-.305.305-.508.102-.203.051-.382-.025-.533-.076-.152-.686-1.657-.94-2.268-.248-.596-.5-.515-.686-.525-.178-.01-.382-.01-.585-.01-.203 0-.533.076-.813.382-.279.305-1.066 1.042-1.066 2.54 0 1.498 1.092 2.946 1.244 3.15.152.203 2.152 3.284 5.212 4.606 1.947.84 2.503.788 3.164.662.661-.127 2.134-.864 2.438-1.701.305-.837.305-1.55.203-1.701-.102-.152-.382-.254-.686-.406z"/>
+                                        </svg>
+                                        <span className="text-center">
+                                            Envie o comprovante para <a href="https://wa.me/5553999999999" target="_blank" rel="noopener noreferrer" className="font-bold text-green-700 hover:text-green-800 hover:underline">(53) 99999-9999</a>
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {paymentMethod === 'later' && (
+                                <div className="mt-4 animate-fade-in-up">
+                                    <p className="text-sm text-brand-primary p-3 bg-brand-primary/5 rounded-xl border border-brand-primary/20 font-medium">Entraremos em contato com você pelo WhatsApp para combinar o pagamento (Pix, Cartão ou Dinheiro).</p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-center">
@@ -168,7 +254,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
 
                         <button 
                             type="submit" 
-                            disabled={cartItems.length === 0 || isLoading}
+                            disabled={cartItems.length === 0 || isLoading || !paymentMethod || !whatsapp.trim()}
                             className="w-full bg-brand-primary hover:bg-brand-primary-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50 transform hover:-translate-y-0.5 transition-all active:scale-95 text-lg flex justify-center items-center"
                         >
                             {isLoading ? (
