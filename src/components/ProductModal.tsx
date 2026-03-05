@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Product } from '../types';
+import { SizeGuideModal } from './SizeGuideModal';
 
 interface ProductModalProps {
     product: Product | null;
@@ -12,6 +13,7 @@ const SIZES = ['P', 'M', 'G', 'GG', 'XG'];
 
 export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductModalProps) {
     const [selectedSize, setSelectedSize] = useState<string>('');
+    const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
     if (!isOpen || !product) return null;
 
@@ -66,9 +68,20 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
                         </p>
 
                         <div className="mb-6">
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                Selecione o Tamanho:
-                            </label>
+                            <div className="flex justify-between items-end mb-3">
+                                <label className="block text-sm font-semibold text-gray-700">
+                                    Selecione o Tamanho:
+                                </label>
+                                <button 
+                                    onClick={() => setIsSizeGuideOpen(true)}
+                                    className="text-xs font-semibold text-brand-primary hover:text-brand-primary-hover flex items-center gap-1 underline underline-offset-2 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    Tabela de Medidas
+                                </button>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {SIZES.map((size) => (
                                     <button
@@ -106,6 +119,11 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
                     </button>
                 </div>
             </div>
+
+            <SizeGuideModal 
+                isOpen={isSizeGuideOpen} 
+                onClose={() => setIsSizeGuideOpen(false)} 
+            />
         </div>
     );
 }
