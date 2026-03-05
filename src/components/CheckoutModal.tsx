@@ -18,6 +18,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'later' | ''>('');
     const [whatsapp, setWhatsapp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [notification, setNotification] = useState<{show: boolean, type: 'success' | 'error' | 'warning', message: string}>({ show: false, type: 'success', message: '' });
     const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     if (!isOpen) return null;
@@ -34,7 +35,11 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
         
         const recaptchaValue = recaptchaRef.current?.getValue();
         if (!recaptchaValue) {
-            alert('Por favor, confirme que você não é um robô.');
+            setNotification({
+                show: true,
+                type: 'warning',
+                message: 'Por favor, confirme que você não é um robô antes de prosseguir.'
+            });
             return;
         }
 
@@ -88,20 +93,37 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                 })
             }).catch(console.error);
 
-            alert(`Obrigado, ${name}! Seu pedido foi registrado com sucesso e você receberá um e-mail de confirmação em breve.`);
+            setNotification({
+                show: true,
+                type: 'success',
+                message: `Obrigado, ${name}! Seu pedido foi registrado com sucesso e você receberá um e-mail de confirmação em breve.`
+            });
             setName('');
             setEmail('');
             setWhatsapp('');
             setPaymentMethod('');
-            onConfirm({ name, email });
         } catch (error) {
             console.error('Erro ao enviar pedido:', error);
-            alert('Houve um erro ao processar seu pedido. Por favor, tente novamente.');
+            setNotification({
+                show: true,
+                type: 'error',
+                message: 'Houve um erro ao processar seu pedido. Por favor, verifique sua conexão ou tente novamente mais tarde.'
+            });
         } finally {
             recaptchaRef.current?.reset();
             setIsLoading(false);
         }
     };
+
+    const handleCloseNotification = () => {
+        const wasSuccess = notification.type === 'success';
+        setNotification({ ...notification, show: false });
+        if (wasSuccess) {
+            onConfirm({ name, email });
+        }
+    };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity">
@@ -232,7 +254,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                                             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 1.829 6.366L0 24l5.807-1.52A12.052 12.052 0 0 0 11.944 24c6.627 0 12-5.373 12-12s-5.373-12-12-12zM12 21.905a9.96 9.96 0 0 1-5.088-1.391l-3.64.954.97-3.541A9.954 9.954 0 0 1 2.056 12C2.056 6.516 6.516 2.056 12 2.056s9.944 4.46 9.944 9.944S17.484 21.905 12 21.905zm5.558-7.584c-.305-.152-1.801-.89-2.079-.99-.279-.102-.482-.152-.686.152-.203.305-.788.99-1.016 1.218-.178.203-.382.254-.686.102-.305-.152-1.286-.474-2.45-1.517-.905-.812-1.515-1.815-1.693-2.12-.178-.305-.019-.47.133-.62.137-.136.305-.355.457-.533.152-.178.203-.305.305-.508.102-.203.051-.382-.025-.533-.076-.152-.686-1.657-.94-2.268-.248-.596-.5-.515-.686-.525-.178-.01-.382-.01-.585-.01-.203 0-.533.076-.813.382-.279.305-1.066 1.042-1.066 2.54 0 1.498 1.092 2.946 1.244 3.15.152.203 2.152 3.284 5.212 4.606 1.947.84 2.503.788 3.164.662.661-.127 2.134-.864 2.438-1.701.305-.837.305-1.55.203-1.701-.102-.152-.382-.254-.686-.406z"/>
                                         </svg>
                                         <span className="text-center">
-                                            Envie o comprovante para <a href="https://wa.me/5553999999999" target="_blank" rel="noopener noreferrer" className="font-bold text-green-700 hover:text-green-800 hover:underline">(53) 99999-9999</a>
+                                            Envie o comprovante para <a href="https://wa.me/5553991326993" target="_blank" rel="noopener noreferrer" className="font-bold text-green-700 hover:text-green-800 hover:underline">(53) 99132-6993 (Makely)</a>
                                         </span>
                                     </div>
                                 </div>
@@ -268,6 +290,53 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                     </form>
                 </div>
             </div>
+
+            {/* Modal de Notificação */}
+            {notification.show && (
+                <div className="absolute inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100 animate-fade-in-up">
+                        <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4 ${
+                            notification.type === 'success' ? 'bg-green-100' : 
+                            notification.type === 'error' ? 'bg-red-100' : 'bg-yellow-100'
+                        }`}>
+                            {notification.type === 'success' && (
+                                <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                            {notification.type === 'error' && (
+                                <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            )}
+                            {notification.type === 'warning' && (
+                                <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            )}
+                        </div>
+                        <h3 className={`text-xl font-bold mb-2 ${
+                            notification.type === 'success' ? 'text-green-800' : 
+                            notification.type === 'error' ? 'text-red-800' : 'text-yellow-800'
+                        }`}>
+                            {notification.type === 'success' ? 'Sucesso!' : 
+                             notification.type === 'error' ? 'Ops, algo deu errado' : 'Atenção'}
+                        </h3>
+                        <p className="text-gray-600 mb-6 text-sm">
+                            {notification.message}
+                        </p>
+                        <button
+                            onClick={handleCloseNotification}
+                            className={`w-full py-3 px-4 rounded-xl text-white font-bold transition-colors shadow-sm ${
+                                notification.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 
+                                notification.type === 'error' ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-500 hover:bg-yellow-600'
+                            }`}
+                        >
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
