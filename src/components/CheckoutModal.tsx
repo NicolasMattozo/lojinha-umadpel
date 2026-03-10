@@ -43,6 +43,24 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
             return;
         }
 
+        // ── Idempotência: gera um ID único para este pedido ──────────────────────
+        // Formato: order_<timestamp>_<random> — garante unicidade mesmo em cliques
+        // simultâneos no mesmo dispositivo.
+        const orderId = `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+        // Proteção contra double-submit: se este orderId já foi enviado nesta sessão,
+        // bloqueia imediatamente sem disparar nenhuma chamada de rede.
+        const sessionKey = `sent_order_${orderId}`;
+        if (sessionStorage.getItem(sessionKey)) {
+            setNotification({
+                show: true,
+                type: 'warning',
+                message: 'Este pedido já foi enviado. Aguarde a confirmação.'
+            });
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
         setIsLoading(true);
 
         const itemsList = cartItems.map(item => 
@@ -76,9 +94,11 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
             );
 
             // Fire-and-forget para o Google Sheets (Web App)
+            // O orderId é incluído no payload para rastreabilidade na planilha.
             fetch(import.meta.env.VITE_APPS_SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
+                    orderId,                     // ← chave de idempotência
                     customerName: name,
                     customerEmail: email,
                     whatsapp: whatsapp,
@@ -91,7 +111,12 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onConfirm }: Checkou
                         price: item.price
                     }))
                 })
-            }).catch(console.error);
+            })
+            .then(() => {
+                // Marca o orderId como enviado nesta sessão — impede reenvio acidental
+                sessionStorage.setItem(sessionKey, '1');
+            })
+            .catch(console.error);
 
             setNotification({
                 show: true,
